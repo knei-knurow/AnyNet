@@ -1,5 +1,8 @@
 import argparse
 import os
+import cv2 as cv
+#cv.namedWindow("3d", cv.WINDOW_NORMAL)
+
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -7,11 +10,18 @@ import torch.optim as optim
 import torch.utils.data
 import torch.nn.functional as F
 import time
+import numpy as np
 from dataloader import KITTILoader as DA
 import utils.logger as logger
 import torch.backends.cudnn as cudnn
-
+from cams import Camera 
 import models.anynet
+
+from matplotlib import pyplot as plt
+
+camL = Camera(0, "stereo-left")
+camR = Camera(1, "stereo-right")
+
 
 parser = argparse.ArgumentParser(description='Anynet fintune on KITTI')
 parser.add_argument('--maxdisp', type=int, default=192,
@@ -26,8 +36,8 @@ parser.add_argument('--epochs', type=int, default=300,
                     help='number of epochs to train')
 parser.add_argument('--train_bsize', type=int, default=6,
                     help='batch size for training (default: 6)')
-parser.add_argument('--test_bsize', type=int, default=8,
-                    help='batch size for testing (default: 8)')
+parser.add_argument('--test_bsize', type=int, default=1,
+                    help='batch size for testing (default: 1)')
 parser.add_argument('--save_path', type=str, default='results/finetune_anynet',
                     help='the path of saving checkpoints and log')
 parser.add_argument('--resume', type=str, default=None,
@@ -82,6 +92,7 @@ def main():
     model = models.anynet.AnyNet(args)
     model = nn.DataParallel(model).cuda()
     optimizer = optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.999))
+
     log.info('Number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
 
     if args.pretrained:
@@ -110,7 +121,7 @@ def main():
     cudnn.benchmark = True
     start_full_time = time.time()
     if args.evaluate:
-        test(TestImgLoader, model, log)
+        test(TestImgLoader, model)
         return
 
     for epoch in range(args.start_epoch, args.epochs):
@@ -178,32 +189,41 @@ def train(dataloader, model, optimizer, log, epoch=0):
     log.info('Average train loss = ' + info_str)
 
 
-def test(dataloader, model, log):
+
+def normalize_u8(array):
+    zmin = np.amin(array)
+    zmax = np.amax(array)
+    return  ((array + zmin)* 255 // (zmin + zmax)).astype(np.uint8)
+    
+
+
+
+def test(dataloader, model):
 
     stages = 3 + args.with_spn
-    D1s = [AverageMeter() for _ in range(stages)]
-    length_loader = len(dataloader)
-
     model.eval()
 
-    for batch_idx, (imgL, imgR, disp_L) in enumerate(dataloader):
+    for _, (imgL, imgR, disp_L) in enumerate(dataloader):
         imgL = imgL.float().cuda()
         imgR = imgR.float().cuda()
         disp_L = disp_L.float().cuda()
 
+        start = time.time()
+        camL.shot()
+        camR.shot()
+
         with torch.no_grad():
             outputs = model(imgL, imgR)
-            for x in range(stages):
-                output = torch.squeeze(outputs[x], 1)
-                D1s[x].update(error_estimating(output, disp_L).item())
-
-        info_str = '\t'.join(['Stage {} = {:.4f}({:.4f})'.format(x, D1s[x].val, D1s[x].avg) for x in range(stages)])
-
-        log.info('[{}/{}] {}'.format(
-            batch_idx, length_loader, info_str))
-
-    info_str = ', '.join(['Stage {}={:.4f}'.format(x, D1s[x].avg) for x in range(stages)])
-    log.info('Average test 3-Pixel Error = ' + info_str)
+            array = outputs[stages - 1].cpu().detach().numpy()[0][0]
+            end = time.time()
+            print(end - start)
+            z_colormapped = cv.applyColorMap(normalize_u8(array), cv.COLORMAP_JET)
+            #plt.imshow(z_colormapped, interpolation='nearest')
+            #plt.show()
+            #filename = "output/" + str(x) + "_" + str(i) + ".jpg"
+            #cv.imwrite(filename, z_colormapped)
+            #cv.imshow("3d", z_colormapped)
+            #cv.waitKey(10)
 
 
 def error_estimating(disp, ground_truth, maxdisp=192):
