@@ -31,11 +31,6 @@ class Camera:
 
 
     def shot(self):
-        self.video.grab()
-        _, self.frame = self.video.retrieve()
+        _, self.frame = self.video.read()
+        return self.frame
     
-
-
-
-ddddd
-hgfhhhghfgh
