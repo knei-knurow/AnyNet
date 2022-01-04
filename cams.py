@@ -1,9 +1,7 @@
 import cv2
-import os   
-import time
 
 class Camera:
-    def __init__(self, camID, name, interface="csi", mode=3, width=1920, height=1080, framerate=30, flipMethod=0, displayFormat="BGR"):
+    def __init__(self, camID, name, interface="csi", mode=3, width=1280, height=720, framerate=30, flipMethod=0, displayFormat="BGR"):
         self.camID = camID,
         self.name = name
         self.interface = interface
@@ -16,8 +14,6 @@ class Camera:
         self.displayWidth = width
         self.displayHeight = height
         self.displayFormat = displayFormat
-
-        #cv2.namedWindow(self.name, cv.WINDOW_NORMAL)
 
         self.source =  ("nvarguscamerasrc sensor-id=%d sensor-mode=3 !"
         "video/x-raw(memory:NVMM), "
@@ -41,5 +37,5 @@ class Camera:
 
 
 
-
-
+ddddd
+hgfhhhghfgh
