@@ -28,6 +28,8 @@ class Camera:
             
 
         self.video = cv2.VideoCapture(self.source)
+        while not self.video.isOpened():
+            pass
 
 
     def shot(self):
