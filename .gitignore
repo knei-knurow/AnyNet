@@ -5,3 +5,4 @@ dataloader/*
 *__pycache__*
 output*
 results
+models/snp_t1/build/*
