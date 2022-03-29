@@ -149,8 +149,14 @@ def test(dataloader, model, log):
     model.eval()
 
     for batch_idx, (imgL, imgR, disp_L) in enumerate(dataloader):
+
+        print(imgL)
+
         imgL = imgL.float().cuda()
         imgR = imgR.float().cuda()
+
+        print(imgL)
+
         disp_L = disp_L.float().cuda()
 
         mask = disp_L < args.maxdisp

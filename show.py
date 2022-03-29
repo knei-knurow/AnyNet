@@ -1,3 +1,18 @@
+import yaml
+with open("config.yml", "r") as config_file:
+    cfg = yaml.safe_load(config_file)
+
+host = cfg["host"]
+port = cfg["port"]
+debug = cfg["debug"]
+sources = cfg["sources"]
+path = cfg["path"]
+is_remote = cfg["remote"]
+
+with open("rovercamera/config/stereo.yml", "r") as rovercamera_config_file:
+    rovercamera_cfg = yaml.unsafe_load(rovercamera_config_file)
+
+import rovercamera
 import argparse
 import os
 from rovercamera import RoverCamera
@@ -68,23 +83,25 @@ def main():
         log.error("=> No checkpoint found! ")
         exit()
 
-    camLeft = RoverCamera("left")
-    camRight = RoverCamera("right")
+    camLeft = RoverCamera("left", rovercamera_cfg)
+    camRight = RoverCamera("right", rovercamera_cfg)
 
     imLeft = camLeft.get_frame()
     imRight = camRight.get_frame()
+    
+    print(imLeft.shape)
 
-    test(imLeft, imRight, model, log)
+    print(test(imLeft, imRight, model))
  
-
+    
 
 def test(imgL, imgR, model):
 
     stages = 3 + args.with_spn
 
     model.eval()
-    imgL = imgL.float().cuda()
-    imgR = imgR.float().cuda()
+    imgL = torch.from_numpy(imgL).float().cuda()
+    imgR = torch.from_numpy(imgR).float().cuda()
 
     with torch.no_grad():
         outputs = model(imgL, imgR)

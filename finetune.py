@@ -204,8 +204,16 @@ def test(dataloader, model):
     model.eval()
 
     for _, (imgL, imgR, disp_L) in enumerate(dataloader):
+
+        print(imgL.size())
+
         imgL = imgL.float().cuda()
         imgR = imgR.float().cuda()
+    
+        print(imgL.size())
+
+        exit()
+
         disp_L = disp_L.float().cuda()
 
         start = time.time()

@@ -10,11 +10,10 @@ sources = cfg["sources"]
 path = cfg["path"]
 is_remote = cfg["remote"]
 
-
 with open("rovercamera/config/stereo.yml", "r") as rovercamera_config_file:
-    rovercamera_cfg = yaml.full_load(rovercamera_config_file)
+    rovercamera_cfg = yaml.unsafe_load(rovercamera_config_file)
 
-from rovercamera import RoverCamera
+import rovercamera
 
 import cv2 as cv
 import logging
@@ -31,7 +30,8 @@ else:
 
 def get_rovercamera(name):
     # logging.info("Connecting to: ", name)
-    return rovercamera.RoverCamera(name, remote=is_remote, host=host, port=port, config=rovercamera_cfg)
+    print(rovercamera_cfg)
+    return rovercamera.RoverCamera(name, config=rovercamera_cfg)
 
 
 
