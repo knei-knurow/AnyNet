@@ -1,0 +1,3 @@
+[submodule "rovercamera"]
+	path = rovercamera
+	url = https://github.com/knei-knurow/rovercamera
