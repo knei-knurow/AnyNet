@@ -120,6 +120,7 @@ def train(dataloader, model, optimizer, log, epoch=0):
         if mask.float().sum() == 0:
             continue
         mask.detach_()
+        print(imgL)
         outputs = model(imgL, imgR)
         outputs = [torch.squeeze(output, 1) for output in outputs]
         loss = [args.loss_weights[x] * F.smooth_l1_loss(outputs[x][mask], disp_L[mask], size_average=True)

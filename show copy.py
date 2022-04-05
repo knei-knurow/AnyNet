@@ -1,5 +1,21 @@
+import yaml
+with open("config.yml", "r") as config_file:
+    cfg = yaml.safe_load(config_file)
+
+host = cfg["host"]
+port = cfg["port"]
+debug = cfg["debug"]
+sources = cfg["sources"]
+path = cfg["path"]
+is_remote = cfg["remote"]
+
+with open("rovercamera/config/stereo.yml", "r") as rovercamera_config_file:
+    rovercamera_cfg = yaml.unsafe_load(rovercamera_config_file)
+
+import rovercamera
 import argparse
 import os
+from rovercamera import RoverCamera
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -10,9 +26,7 @@ import time
 from dataloader import listflowfile as lt
 from dataloader import SecenFlowLoader as DA
 import utils.logger as logger
-from rovercamera import RoverCamera
 import models.anynet
-import cv2 as cv
 
 parser = argparse.ArgumentParser(description='AnyNet with Flyingthings3d')
 parser.add_argument('--maxdisp', type=int, default=192, help='maxium disparity')
@@ -69,29 +83,25 @@ def main():
         log.error("=> No checkpoint found! ")
         exit()
 
-    camLeft = RoverCamera("left")
-    camRight = RoverCamera("right")
+    camLeft = RoverCamera("left", rovercamera_cfg)
+    camRight = RoverCamera("right", rovercamera_cfg)
 
     imLeft = camLeft.get_frame()
     imRight = camRight.get_frame()
+    
+    print(imLeft.shape)
 
-    output = test(imLeft, imRight, model, log)
-    print(output)
-
+    print(test(imLeft, imRight, model))
+ 
+    
 
 def test(imgL, imgR, model):
 
     stages = 3 + args.with_spn
 
-    imgL = cv.resize(imgL, (654, 368))
-    imgR = cv.resize(imgR, (654, 368))
-
-    imgL = cv.copyMakeBorder(imgL, 0, 0, 269, 269, cv.BORDER_REPLICATE)
-    imgR = cv.copyMakeBorder(imgR, 0, 0, 269, 269, cv.BORDER_REPLICATE)
-
     model.eval()
-    imgL = imgL.float().cuda()
-    imgR = imgR.float().cuda()
+    imgL = torch.from_numpy(imgL).float().cuda()
+    imgR = torch.from_numpy(imgR).float().cuda()
 
     with torch.no_grad():
         outputs = model(imgL, imgR)
@@ -122,4 +132,5 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
-main()
+if __name__ == '__main__':
+    main()

@@ -155,6 +155,7 @@ def train(dataloader, model, optimizer, log, epoch=0):
     for batch_idx, (imgL, imgR, disp_L) in enumerate(dataloader):
         imgL = imgL.float().cuda()
         imgR = imgR.float().cuda()
+        print(imgL)
         disp_L = disp_L.float().cuda()
 
         optimizer.zero_grad()
